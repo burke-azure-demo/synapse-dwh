@@ -1,0 +1,28 @@
+{
+	"name": "SnowflakeUTCDate",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Snowflake",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"SnowflakeAccount": "pg06363.central-us.azure",
+				"SnowflakeUsername": "SYNAPSE",
+				"SnowflakeDB": "BURKE_DWH"
+			}
+		},
+		"annotations": [],
+		"type": "SnowflakeTable",
+		"schema": [
+			{
+				"name": "UTCDATE",
+				"type": "TIMESTAMP_NTZ",
+				"precision": 29,
+				"scale": 9
+			}
+		],
+		"typeProperties": {
+			"schema": "PUBLIC",
+			"table": "DATETEST"
+		}
+	}
+}

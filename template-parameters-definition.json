@@ -1,0 +1,101 @@
+{
+  "Microsoft.Synapse/workspaces/pipelines": {
+    "properties": {
+      "activities": [
+        {
+          "typeProperties": {
+            "waitTimeInSeconds": "-::int",
+            "headers": "=::object",
+            "activities": [
+              {
+                "typeProperties": {
+                  "url": "-:-webUrl:string"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "parameters": {
+        "query": {
+          "defaultValue": "="
+        }
+      }
+    }
+  },
+  "Microsoft.Synapse/workspaces/integrationRuntimes": {
+    "properties": {
+      "typeProperties": {
+        "*": "="
+      }
+    }
+  },
+  "Microsoft.Synapse/workspaces/triggers": {
+    "properties": {
+      "typeProperties": {
+        "recurrence": {
+          "*": "=",
+          "interval": "=:triggerSuffix:int",
+          "frequency": "=:-freq"
+        },
+        "maxConcurrency": "="
+      }
+    }
+  },
+  "Microsoft.Synapse/workspaces/linkedServices": {
+    "*": {
+      "properties": {
+        "typeProperties": {
+          "accountName": "=",
+          "username": "=",
+          "connectionString": "|:-connectionString:secureString",
+          "secretAccessKey": "|"
+        }
+      }
+    },
+    "AzureBlobFS": {
+      "properties": {
+        "typeProperties": {
+          "url": "-:-webUrl:string"
+        }
+      }
+    },
+    "AzureDataLakeStore": {
+      "properties": {
+        "typeProperties": {
+          "dataLakeStoreUri": "="
+        }
+      }
+    },
+    "AzureKeyVault": {
+      "properties": {
+        "typeProperties": {
+          "baseUrl": "|:baseUrl:secureString"
+        },
+        "parameters": {
+          "KeyVaultURL": {
+            "type": "=",
+            "defaultValue": "|:defaultValue:secureString"
+          }
+        }
+      }
+    }
+  },
+  "Microsoft.Synapse/workspaces/datasets": {
+    "*": {
+      "properties": {
+        "typeProperties": {
+          "folderPath": "=",
+          "fileName": "="
+        }
+      }
+    }
+  },
+  "Microsoft.Synapse/workspaces/credentials": {
+    "properties": {
+      "typeProperties": {
+        "resourceId": "="
+      }
+    }
+  }
+}
