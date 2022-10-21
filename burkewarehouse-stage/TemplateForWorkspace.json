@@ -175,8 +175,7 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/ServerlessSQL')]",
 				"[concat(variables('workspaceId'), '/datasets/UTCDateParquet')]",
-				"[concat(variables('workspaceId'), '/dataflows/Snowflake')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('workspaceId'), '/dataflows/Snowflake')]"
 			]
 		},
 		{
@@ -339,20 +338,6 @@
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
-				"parameters": {
-					"SnowflakeAccount": {
-						"type": "string",
-						"defaultValue": "pg06363.central-us.azure"
-					},
-					"SnowflakeUsername": {
-						"type": "string",
-						"defaultValue": "SYNAPSE"
-					},
-					"SnowflakeDB": {
-						"type": "string",
-						"defaultValue": "BURKE_DWH"
-					}
-				},
 				"annotations": [],
 				"type": "Snowflake",
 				"typeProperties": {
