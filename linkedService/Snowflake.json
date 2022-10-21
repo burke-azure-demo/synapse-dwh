@@ -3,13 +3,16 @@
 	"properties": {
 		"parameters": {
 			"SnowflakeAccount": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "pg06363.central-us.azure"
 			},
 			"SnowflakeUsername": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "SYNAPSE"
 			},
 			"SnowflakeDB": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "BURKE_DWH"
 			}
 		},
 		"annotations": [],
