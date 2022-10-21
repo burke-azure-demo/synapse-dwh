@@ -4,7 +4,7 @@
 		"annotations": [],
 		"type": "AzureKeyVault",
 		"typeProperties": {
-			"baseUrl": "https://BurkeKeyvaultDev.vault.azure.net/"
+			"baseUrl": "https://Burke2KeyvaultStage.vault.azure.net/"
 		}
 	}
 }
