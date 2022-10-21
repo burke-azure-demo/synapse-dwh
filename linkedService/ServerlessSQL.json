@@ -4,15 +4,7 @@
 		"annotations": [],
 		"type": "AzureSqlDW",
 		"typeProperties": {
-			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=burkewarehouse-dev.sql.azuresynapse.net;Initial Catalog=master;User ID=system",
-			"password": {
-				"type": "AzureKeyVaultSecret",
-				"store": {
-					"referenceName": "AzureKeyVault",
-					"type": "LinkedServiceReference"
-				},
-				"secretName": "ServerlessSqlPassword"
-			}
+			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=burkewarehouse-stage.sql.azuresynapse.net;Initial Catalog=master"
 		},
 		"connectVia": {
 			"referenceName": "AutoResolveIntegrationRuntime",
