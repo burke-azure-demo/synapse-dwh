@@ -1,24 +1,10 @@
 {
 	"name": "Snowflake",
 	"properties": {
-		"parameters": {
-			"SnowflakeAccount": {
-				"type": "string",
-				"defaultValue": "pg06363.central-us.azure"
-			},
-			"SnowflakeUsername": {
-				"type": "string",
-				"defaultValue": "SYNAPSE"
-			},
-			"SnowflakeDB": {
-				"type": "string",
-				"defaultValue": "BURKE_DWH"
-			}
-		},
 		"annotations": [],
 		"type": "Snowflake",
 		"typeProperties": {
-			"connectionString": "jdbc:snowflake://@{linkedService().SnowflakeAccount}.snowflakecomputing.com/?user=@{linkedService().SnowflakeUsername}&db=@{linkedService().SnowflakeDB}&warehouse=COMPUTE_WH&role=DB_ETL_ROLE",
+			"connectionString": "jdbc:snowflake://pg06363.central-us.azure.snowflakecomputing.com/?user=SYNAPSE&db=BURKE_DWH&warehouse=COMPUTE_WH&role=DB_ETL_ROLE",
 			"password": {
 				"type": "AzureKeyVaultSecret",
 				"store": {
