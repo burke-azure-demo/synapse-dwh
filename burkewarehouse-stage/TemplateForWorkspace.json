@@ -1,0 +1,506 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "burkewarehouse-stage"
+		},
+		"ServerlessSQL_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'ServerlessSQL'"
+		},
+		"Snowflake_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'Snowflake'"
+		},
+		"burkewarehouse-stage-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'burkewarehouse-stage-WorkspaceDefaultSqlServer'"
+		},
+		"UTCDateToSnowflake_properties_parameters_query_defaultValue": {
+			"type": "string",
+			"defaultValue": "Select [UTCDate] = Cast('10 Oct 2022' As DateTime2(0))"
+		},
+		"AzureKeyVault_properties_typeProperties_baseUrl": {
+			"type": "secureString",
+			"metadata": "Secure string for 'baseUrl' of 'AzureKeyVault'"
+		},
+		"DataLake_webUrl": {
+			"type": "string"
+		},
+		"burkewarehouse-stage-WorkspaceDefaultStorage_webUrl": {
+			"type": "string"
+		},
+		"AutoResolveIntegrationRuntime_properties_typeProperties_computeProperties": {
+			"type": "object",
+			"defaultValue": {
+				"location": "AutoResolve",
+				"dataFlowProperties": {
+					"computeType": "General",
+					"coreCount": 8,
+					"timeToLive": 0,
+					"cleanup": true
+				},
+				"pipelineExternalComputeScaleProperties": {
+					"timeToLive": 60
+				}
+			}
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/UTCDateToSnowflake')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "CreateParquet",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlDWSource",
+								"sqlReaderQuery": {
+									"value": "@pipeline().parameters.query",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "UTCDate",
+											"type": "DateTime"
+										},
+										"sink": {
+											"name": "UTCDate",
+											"type": "DateTime"
+										}
+									}
+								]
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ServerlessSQL",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "UTCDateParquet",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "DumpToSnowflake",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "CreateParquet",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Snowflake",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"UTCDate": {},
+									"Snowflake": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"query": {
+						"type": "string",
+						"defaultValue": "[parameters('UTCDateToSnowflake_properties_parameters_query_defaultValue')]"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/ServerlessSQL')]",
+				"[concat(variables('workspaceId'), '/datasets/UTCDateParquet')]",
+				"[concat(variables('workspaceId'), '/dataflows/Snowflake')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ServerlessSQL')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ServerlessSQL",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/ServerlessSQL')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SnowflakeTable1')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Snowflake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "SnowflakeTable",
+				"schema": [
+					{
+						"name": "UTCDATE",
+						"type": "TIMESTAMP_NTZ",
+						"precision": 29,
+						"scale": 9
+					}
+				],
+				"typeProperties": {
+					"schema": "PUBLIC",
+					"table": "DATETEST"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/Snowflake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SnowflakeUTCDate')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Snowflake",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"SnowflakeAccount": "pg06363.central-us.azure",
+						"SnowflakeUsername": "SYNAPSE",
+						"SnowflakeDB": "BURKE_DWH"
+					}
+				},
+				"annotations": [],
+				"type": "SnowflakeTable",
+				"schema": [
+					{
+						"name": "UTCDATE",
+						"type": "TIMESTAMP_NTZ",
+						"precision": 29,
+						"scale": 9
+					}
+				],
+				"typeProperties": {
+					"schema": "PUBLIC",
+					"table": "DATETEST"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/Snowflake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/UTCDateParquet')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "DataLake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "utcdate",
+						"fileSystem": "burke"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/DataLake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureKeyVault')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('AzureKeyVault_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DataLake')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('DataLake_webUrl')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ServerlessSQL')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('ServerlessSQL_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Snowflake')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"SnowflakeAccount": {
+						"type": "string",
+						"defaultValue": "pg06363.central-us.azure"
+					},
+					"SnowflakeUsername": {
+						"type": "string",
+						"defaultValue": "SYNAPSE"
+					},
+					"SnowflakeDB": {
+						"type": "string",
+						"defaultValue": "BURKE_DWH"
+					}
+				},
+				"annotations": [],
+				"type": "Snowflake",
+				"typeProperties": {
+					"connectionString": "[parameters('Snowflake_connectionString')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "AzureKeyVault",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "SnowflakePassword"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('workspaceId'), '/linkedServices/AzureKeyVault')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/burkewarehouse-stage-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('burkewarehouse-stage-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/burkewarehouse-stage-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('burkewarehouse-stage-WorkspaceDefaultStorage_webUrl')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": "[parameters('AutoResolveIntegrationRuntime_properties_typeProperties_computeProperties')]"
+				},
+				"managedVirtualNetwork": {
+					"type": "ManagedVirtualNetworkReference",
+					"referenceName": "default"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Snowflake')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "UTCDateParquet",
+								"type": "DatasetReference"
+							},
+							"name": "UTCDate"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "SnowflakeUTCDate",
+								"type": "DatasetReference"
+							},
+							"name": "Snowflake"
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"source(output(",
+						"          UTCDate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: true,",
+						"     format: 'parquet') ~> UTCDate",
+						"UTCDate sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          UTCDATE as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     stageInsert: true,",
+						"     mapColumn(",
+						"          UTCDATE = UTCDate",
+						"     )) ~> Snowflake"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/UTCDateParquet')]",
+				"[concat(variables('workspaceId'), '/datasets/SnowflakeUTCDate')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/default')]",
+			"type": "Microsoft.Synapse/workspaces/managedVirtualNetworks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {},
+			"dependsOn": []
+		}
+	]
+}

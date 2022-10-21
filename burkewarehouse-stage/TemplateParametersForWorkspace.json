@@ -1,0 +1,44 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "burkewarehouse-stage"
+		},
+		"ServerlessSQL_connectionString": {
+			"value": ""
+		},
+		"Snowflake_connectionString": {
+			"value": ""
+		},
+		"burkewarehouse-stage-WorkspaceDefaultSqlServer_connectionString": {
+			"value": ""
+		},
+		"UTCDateToSnowflake_properties_parameters_query_defaultValue": {
+			"value": "Select [UTCDate] = Cast('10 Oct 2022' As DateTime2(0))"
+		},
+		"AzureKeyVault_properties_typeProperties_baseUrl": {
+			"value": ""
+		},
+		"DataLake_webUrl": {
+			"value": ""
+		},
+		"burkewarehouse-stage-WorkspaceDefaultStorage_webUrl": {
+			"value": ""
+		},
+		"AutoResolveIntegrationRuntime_properties_typeProperties_computeProperties": {
+			"value": {
+				"location": "AutoResolve",
+				"dataFlowProperties": {
+					"computeType": "General",
+					"coreCount": 8,
+					"timeToLive": 0,
+					"cleanup": true
+				},
+				"pipelineExternalComputeScaleProperties": {
+					"timeToLive": 60
+				}
+			}
+		}
+	}
+}
